@@ -548,7 +548,7 @@ const CCOL = collection(db, "categories");
 // ─── Acceso admin solo con ?admin en la URL ───────────────
 // Uso: https://tusitio.netlify.app?admin
 // El visitante normal nunca verá el panel.
-const isAdmin = new URLSearchParams(location.search).has('admin');
+const isAdmin = location.hash === '#admin' || new URLSearchParams(location.search).has('admin');
 if (isAdmin) {
   document.getElementById('admOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
