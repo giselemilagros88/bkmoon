@@ -486,7 +486,7 @@ footer { border-top: 1px solid var(--ink-3); padding: 46px 60px; display: flex; 
 </section>
 
 <footer>
-  <div class="footer-brand">
+  <div class="footer-brand" id="footerBrand" title="">
     <span class="main">BK MOON</span>
     <span class="sub">Federico Franconere</span>
   </div>
@@ -495,7 +495,7 @@ footer { border-top: 1px solid var(--ink-3); padding: 46px 60px; display: flex; 
     <a href="#">Instagram</a>
     <a href="#">WhatsApp</a>
     <a href="#">Behance</a>
-    <button id="adminBtn" onclick="openAdminPanel()" style="background:none;border:none;cursor:none;font-family:'Cinzel',serif;font-size:7px;letter-spacing:2px;text-transform:uppercase;color:var(--ink-3);transition:color .3s;padding:0" onmouseover="this.style.color='var(--steel)'" onmouseout="this.style.color='var(--ink-3)'">⚙</button>
+
   </div>
 </footer>
 
@@ -600,16 +600,18 @@ const CCOL = collection(db, "categories");
 // ─── Acceso admin solo con ?admin en la URL ───────────────
 // Uso: https://tusitio.netlify.app?admin
 // El visitante normal nunca verá el panel.
-function checkAdmin() {
-  const h = location.hash.toLowerCase();
-  const q = new URLSearchParams(location.search).has('admin');
-  if (h === '#admin' || h.startsWith('#admin') || q) {
-    document.getElementById('admOverlay').classList.add('open');
-    document.body.style.overflow = 'hidden';
-  }
+// Admin: triple-click en logo del footer, o escribir "bkmoon" en el teclado
+function openAdminOverlay() {
+  document.getElementById('admOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
 }
-checkAdmin();
-window.addEventListener('hashchange', checkAdmin);
+// Secuencia de teclado secreta: escribir "bkmoon"
+let _kseq = '';
+document.addEventListener('keydown', function(e) {
+  _kseq += e.key.toLowerCase();
+  if (_kseq.length > 6) _kseq = _kseq.slice(-6);
+  if (_kseq === 'bkmoon') { _kseq = ''; openAdminOverlay(); }
+});
 
 const S = { photos: [], cats: [], loggedIn: false };
 let selFile = null, lbIdx = 0, filterCat = 'all';
@@ -689,7 +691,7 @@ document.addEventListener('keydown', e => {
 });
 
 window.closeAdmin = () => { document.getElementById('admOverlay').classList.remove('open'); document.body.style.overflow=''; };
-window.openAdminPanel = () => { document.getElementById('admOverlay').classList.add('open'); document.body.style.overflow='hidden'; };
+window.openAdminPanel = openAdminOverlay;
 window.doLogin = () => {
   const u=document.getElementById('admUser').value, p=document.getElementById('admPass').value;
   if(u===window.ADMIN_USER && p===window.ADMIN_PASS){
@@ -884,6 +886,22 @@ function toast(msg) {
     requestAnimationFrame(tick);
   }
   tick();
+
+  // Triple click en footer brand abre admin
+  var clicks = 0, clickTimer;
+  var brand = document.getElementById('footerBrand');
+  if (brand) {
+    brand.addEventListener('click', function() {
+      clicks++;
+      clearTimeout(clickTimer);
+      clickTimer = setTimeout(function() { clicks = 0; }, 500);
+      if (clicks >= 3) {
+        clicks = 0;
+        document.getElementById('admOverlay').classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+    });
+  }
 })();
 </script>
 </body>
