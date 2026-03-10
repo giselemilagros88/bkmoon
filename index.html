@@ -401,9 +401,11 @@ footer { border-top: 1px solid var(--ink-3); padding: 46px 60px; display: flex; 
     <div class="about-visual">
       <div class="corner-acc tl"></div>
       <div class="about-img-box">
-        <div class="about-ph">
+        <img src="federico.jpg" alt="Federico Franconere" 
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="about-ph" style="display:none">
           <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-          <span>Foto del fotógrafo</span>
+          <span>Subí federico.jpg al repo</span>
         </div>
       </div>
       <div class="corner-acc br"></div>
@@ -606,11 +608,22 @@ function openAdminOverlay() {
   document.body.style.overflow = 'hidden';
 }
 // Secuencia de teclado secreta: escribir "bkmoon"
+// Solo activa si no hay ningún input enfocado
 let _kseq = '';
 document.addEventListener('keydown', function(e) {
+  var tag = document.activeElement ? document.activeElement.tagName : '';
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
   _kseq += e.key.toLowerCase();
   if (_kseq.length > 6) _kseq = _kseq.slice(-6);
-  if (_kseq === 'bkmoon') { _kseq = ''; openAdminOverlay(); }
+  if (_kseq === 'bkmoon') {
+    _kseq = '';
+    // Limpiar campos antes de abrir
+    var u = document.getElementById('admUser');
+    var p = document.getElementById('admPass');
+    if (u) u.value = '';
+    if (p) p.value = '';
+    openAdminOverlay();
+  }
 });
 
 const S = { photos: [], cats: [], loggedIn: false };
@@ -640,6 +653,9 @@ function listenPhotos() {
 }
 
 function renderAll() {
+  window._renderAll = renderAll;
+  window._renderManage = renderManage;
+  window._renderCatList = renderCatList;
   renderGallery(); renderFilters();
   renderManage(); renderCatList();
   updateCatSelects(); updateStats();
@@ -693,15 +709,20 @@ document.addEventListener('keydown', e => {
 window.closeAdmin = () => { document.getElementById('admOverlay').classList.remove('open'); document.body.style.overflow=''; };
 window.openAdminPanel = openAdminOverlay;
 window.doLogin = () => {
-  const u=document.getElementById('admUser').value, p=document.getElementById('admPass').value;
-  if(u===window.ADMIN_USER && p===window.ADMIN_PASS){
-    S.loggedIn=true;
-    document.getElementById('admLogin').style.display='none';
+  const u = document.getElementById('admUser').value.trim();
+  const p = document.getElementById('admPass').value.trim();
+  // Credenciales definidas directamente aquí, sin depender de window
+  const UNAME = 'federico';
+  const UPASS = 'bkmoon2024';
+  if (u === UNAME && p === UPASS) {
+    S.loggedIn = true;
+    document.getElementById('admLogin').style.display = 'none';
     document.getElementById('admPanel').classList.add('open');
     renderAll();
   } else {
-    const er=document.getElementById('admError'); er.style.display='block';
-    setTimeout(()=>er.style.display='none',3000);
+    const er = document.getElementById('admError');
+    er.style.display = 'block';
+    setTimeout(() => er.style.display = 'none', 4000);
   }
 };
 window.doLogout = () => {
@@ -861,6 +882,51 @@ function toast(msg) {
 })();
 </script>
 
+<!-- Funciones globales — fuera del módulo para que los onclick del HTML las encuentren -->
+<script>
+// Login hardcodeado fuera del módulo ES
+function doLogin() {
+  var u = document.getElementById('admUser').value.trim();
+  var p = document.getElementById('admPass').value.trim();
+  if (u === 'federico' && p === 'bkmoon2024') {
+    document.getElementById('admLogin').style.display = 'none';
+    document.getElementById('admPanel').classList.add('open');
+    // Disparar renderAll si el módulo ya cargó
+    if (typeof window._renderAll === 'function') window._renderAll();
+  } else {
+    var er = document.getElementById('admError');
+    er.style.display = 'block';
+    setTimeout(function() { er.style.display = 'none'; }, 4000);
+  }
+}
+function doLogout() {
+  document.getElementById('admPanel').classList.remove('open');
+  document.getElementById('admLogin').style.display = 'flex';
+  document.getElementById('admUser').value = '';
+  document.getElementById('admPass').value = '';
+}
+function closeAdmin() {
+  document.getElementById('admOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function openAdminPanel() {
+  document.getElementById('admUser').value = '';
+  document.getElementById('admPass').value = '';
+  document.getElementById('admOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function switchTab(name) {
+  document.querySelectorAll('.adm-tab').forEach(function(t){ t.classList.remove('open'); });
+  document.querySelectorAll('.adm-nav-item').forEach(function(b){ b.classList.remove('on'); });
+  document.getElementById('tab-'+name).classList.add('open');
+  document.querySelectorAll('.adm-nav-item').forEach(function(b){
+    if(b.textContent.toLowerCase().includes(name==='upload'?'subir':name==='manage'?'gestionar':'categ')) b.classList.add('on');
+  });
+  if (typeof window._renderManage === 'function' && name==='manage') window._renderManage();
+  if (typeof window._renderCatList === 'function' && name==='categories') window._renderCatList();
+}
+</script>
+
 <!-- Cursor standalone — fuera del módulo para evitar colisiones de variables -->
 <script>
 (function() {
@@ -897,6 +963,10 @@ function toast(msg) {
       clickTimer = setTimeout(function() { clicks = 0; }, 500);
       if (clicks >= 3) {
         clicks = 0;
+        var u = document.getElementById('admUser');
+        var p = document.getElementById('admPass');
+        if (u) u.value = '';
+        if (p) p.value = '';
         document.getElementById('admOverlay').classList.add('open');
         document.body.style.overflow = 'hidden';
       }
